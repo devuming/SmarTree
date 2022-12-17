@@ -8,7 +8,6 @@ int color[7][3] = {{255, 0, 0},   // 빨
                   };
 void onNeoPixels(int r, int g, int b, int count){
   // pixels.clear(); // Set all pixel colors to 'off'
-  Serial.println("Hey");
   
   for(int i=0; i<count; i++) { // For each pixel...
     pixels.setPixelColor(start_pixel + i, pixels.Color(r, g, b));
