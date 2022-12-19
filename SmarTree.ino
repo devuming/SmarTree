@@ -7,7 +7,7 @@ int old_light = 0;  // 이전 밝기
 
 //---- Actuator ----
 #define NEO_PIN 11
-#define NUMPIXELS 50  // 사용할 NeoPixel 수
+#define NUMPIXELS 55  // 사용할 NeoPixel 수
 #define BRIGHTNESS 125 
 
 Adafruit_NeoPixel pixels(NUMPIXELS, NEO_PIN, NEO_GRB + NEO_KHZ800);
@@ -21,29 +21,28 @@ String user_id = "1";
 String message = "";
 String data = "";
 String old_data = "";
+int msg_positive = 0;
 
 //---- Slave ----
 void setup() {
   Wire.begin(1);
   Wire.onReceive(receiveEvent);
   Wire.onRequest(requestEvent);
-  pixels.begin();  // INITIALIZE NeoPixel strip object (REQUIRED)
-  pixels.clear();
-  pixels.show();
+
+  pixels.begin(); 
   lcd.begin();
   lcd.backlight();
-  // lcd.print("Hello");
-
   Serial.begin(115200);
 
-  user_id = "1";
-  message = "hello";
-  data = "";
-  old_data = "";
+  // user_id = "1";
+  // message = "hello";
+  // data = "";
+  // old_data = "";
 }
 void loop() {
-  // onNeoPixels_rainbow();
-
+  if(msg_positive > 10)
+    onNeoPixels_rainbow();
+  
   if (data != "" && !data.equals(old_data)) {
     parsingDone(data);
     Serial.print("msg : ");
@@ -82,7 +81,7 @@ void requestEvent() {
   Serial.print(old_light);
   Serial.print(",");
   Serial.print(val);
-  if (old_light - val > 300) {
+  if (((old_light - val) > 300) || val < 400) {   // 400 보다 낮으면 : 이미 어두움
     Wire.write('1');
   } else {
     Wire.write('0');
@@ -129,7 +128,7 @@ void parsingDone(String res) {
   String color = "";
   int total_cnt = 0;
   int done_cnt = 0;
-  int msg_positive = 0;
+  msg_positive = 0;
   Serial.print("hey:");
   Serial.println(res);
 
@@ -168,8 +167,13 @@ void parsingDone(String res) {
       }
 
       Serial.println("parsing done");
-      if ((total_cnt > 0 && total_cnt == done_cnt) || msg_positive == 10) {
-        // 모두완료
+      if (total_cnt > 0 && total_cnt == done_cnt) 
+      {
+        // 할일 다한 경우
+        coloring(color, total_cnt, done_cnt);
+      }
+      else if(msg_positive > 10) {
+        // 메세지 10개 수신
         onNeoPixels_rainbow();
         rudolph();
       } else {
