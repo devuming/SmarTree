@@ -9,7 +9,6 @@ int color[7][3] = {
 };
 
 void onNeoPixels(int r, int g, int b, int count) {
-  // pixels.clear(); // Set all pixel colors to 'off'
   pixels.setBrightness(BRIGHTNESS);
 
   for (int i = 0; i < count; i++) {  // For each pixel...
@@ -23,6 +22,7 @@ void onNeoPixels(int r, int g, int b, int count) {
 
 
 void onNeoPixels_rainbow() {
+  pixels.setBrightness(BRIGHTNESS);
   for (long firstPixelHue = 0; firstPixelHue < 5 * 65536; firstPixelHue += 256) {
     for (int i = 0; i < NUMPIXELS; i++) {
       int pixelHue = firstPixelHue + (i * 65536L / NUMPIXELS);

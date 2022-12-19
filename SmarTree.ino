@@ -8,7 +8,7 @@ int old_light = 0;  // 이전 밝기
 //---- Actuator ----
 #define NEO_PIN 11
 #define NUMPIXELS 55  // 사용할 NeoPixel 수
-#define BRIGHTNESS 125 
+#define BRIGHTNESS 125
 
 Adafruit_NeoPixel pixels(NUMPIXELS, NEO_PIN, NEO_GRB + NEO_KHZ800);
 int start_pixel = 0;
@@ -17,10 +17,11 @@ int start_pixel = 0;
 LiquidCrystal_I2C lcd(0x27, 16, 2);  // LCD I2C 연결 (2행 16열)
 
 //---- Global ----
-String user_id = "1";
 String message = "";
 String data = "";
-String old_data = "";
+String old_data = "none";
+int total_cnt = 0;
+int done_cnt = 0;
 int msg_positive = 0;
 
 //---- Slave ----
@@ -29,9 +30,13 @@ void setup() {
   Wire.onReceive(receiveEvent);
   Wire.onRequest(requestEvent);
 
-  pixels.begin(); 
+  pixels.begin();
+  pixels.clear();
+  pixels.show();
   lcd.begin();
   lcd.backlight();
+  lcd.setCursor(0, 0);
+  lcd.print("No MESSAGE:)");
   Serial.begin(115200);
 
   // user_id = "1";
@@ -40,30 +45,42 @@ void setup() {
   // old_data = "";
 }
 void loop() {
-  if(msg_positive > 10)
+  if (!(total_cnt > 0 && total_cnt == done_cnt) && msg_positive >= 10)
     onNeoPixels_rainbow();
-  
+
   if (data != "" && !data.equals(old_data)) {
     parsingDone(data);
     Serial.print("msg : ");
     Serial.println(message);
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    if (message.length() > 16) {
-      lcd.print(message.substring(0, 15));
-      lcd.setCursor(0, 1);
-      lcd.print(message.substring(15, 30));
-    } else if (message.length() > 0 && message.length() < 16) {
-      lcd.print(message);
-    }
-    else if (message.length() == 0) {
+
+    if (message.length() == 0) {
+      lcd.clear();
+      lcd.setCursor(0, 0);
       lcd.print("No MESSAGE:)");
+    } else {
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      if (message.length() < 16) {
+        lcd.print(message);
+      } else if (message.length() > 16) {
+        lcd.print(message.substring(0, 15));
+        lcd.setCursor(0, 1);
+        if (message.length() > 30) {
+          lcd.print(message.substring(15, 30));
+        } else {
+          lcd.print(message.substring(15));
+        }
+      }
     }
 
+    if (msg_positive >= 10) {
+      rudolph();
+    }
     Serial.println("-----------");
     Serial.println(old_data);
     Serial.println(data);
     Serial.println("-----------");
+
     old_data = data;
   }
 
@@ -80,8 +97,8 @@ void requestEvent() {
   Serial.print("LDR:");
   Serial.print(old_light);
   Serial.print(",");
-  Serial.print(val);
-  if (((old_light - val) > 300) || val < 400) {   // 400 보다 낮으면 : 이미 어두움
+  Serial.println(val);
+  if (((old_light - val) > 300) || val < 400) {  // 400 보다 낮으면 : 이미 어두움
     Wire.write('1');
   } else {
     Wire.write('0');
@@ -126,9 +143,6 @@ void receiveEvent(int howMany) {
 // 할일목록 조회 내용 파싱
 void parsingDone(String res) {
   String color = "";
-  int total_cnt = 0;
-  int done_cnt = 0;
-  msg_positive = 0;
   Serial.print("hey:");
   Serial.println(res);
 
@@ -167,18 +181,17 @@ void parsingDone(String res) {
       }
 
       Serial.println("parsing done");
-      if (total_cnt > 0 && total_cnt == done_cnt) 
-      {
+      if (total_cnt > 0 && total_cnt == done_cnt || msg_positive < 10) {
         // 할일 다한 경우
         coloring(color, total_cnt, done_cnt);
+      } else if (msg_positive >= 10) {
+        // // 메세지 10개 수신
+        // onNeoPixels_rainbow();
+        // rudolph();
       }
-      else if(msg_positive > 10) {
-        // 메세지 10개 수신
-        onNeoPixels_rainbow();
-        rudolph();
-      } else {
-        coloring(color, total_cnt, done_cnt);
-      }
+      // else {
+      //   coloring(color, total_cnt, done_cnt);
+      // }
     }
   }
 
@@ -196,6 +209,7 @@ void coloring(String color, int total, int done) {
   start_pixel = 0;
   int color_cnt = color.length() / 9;
   pixels.clear();
+  pixels.show();
 
   int pixel_count = 0;
   if (done > 0)
