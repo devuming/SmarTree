@@ -60,14 +60,20 @@ void loop() {
     } else {
       lcd.clear();
       lcd.setCursor(0, 0);
-      if (message.length() < 16) {
+      if (message.length() < 16) 
+      {
         lcd.print(message);
-      } else if (message.length() > 16) {
+      } 
+      else 
+      {
         lcd.print(message.substring(0, 15));
         lcd.setCursor(0, 1);
-        if (message.length() > 30) {
+        if (message.length() > 30) 
+        {
           lcd.print(message.substring(15, 30));
-        } else {
+        } 
+        else 
+        {
           lcd.print(message.substring(15));
         }
       }
